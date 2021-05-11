@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a0694d46_f1d12527",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000458
+      },
+      "writtenOn": "2021-05-11T08:22:08Z",
+      "side": 1,
+      "message": "Bouncer Code has been added to ric-app/bouncer repo. Kindly review it. Thanks",
+      "revId": "ff20129c8f517cca6e0b4de6544ff64aebe7c171",
+      "serverId": "84e4e190-e623-4c37-9eda-58b1937c1b53"
+    }
+  ]
+}
