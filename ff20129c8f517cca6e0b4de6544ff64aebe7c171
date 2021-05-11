@@ -33,6 +33,23 @@
       "message": "Adding Matti as a reviewer",
       "revId": "ff20129c8f517cca6e0b4de6544ff64aebe7c171",
       "serverId": "84e4e190-e623-4c37-9eda-58b1937c1b53"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a27345ac_b6618882",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000050
+      },
+      "writtenOn": "2021-05-11T14:57:38Z",
+      "side": 1,
+      "message": "FYI. E2AP generated files are available here\nhttps://gerrit.o-ran-sc.org/r/admin/repos/ric-plt/libe2ap\n\nSo you do not need to repeat them in the xApp repo.",
+      "revId": "ff20129c8f517cca6e0b4de6544ff64aebe7c171",
+      "serverId": "84e4e190-e623-4c37-9eda-58b1937c1b53"
     }
   ]
 }
