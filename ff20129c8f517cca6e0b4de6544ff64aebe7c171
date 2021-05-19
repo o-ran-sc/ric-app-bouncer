@@ -50,6 +50,23 @@
       "message": "FYI. E2AP generated files are available here\nhttps://gerrit.o-ran-sc.org/r/admin/repos/ric-plt/libe2ap\n\nSo you do not need to repeat them in the xApp repo.",
       "revId": "ff20129c8f517cca6e0b4de6544ff64aebe7c171",
       "serverId": "84e4e190-e623-4c37-9eda-58b1937c1b53"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b21aaf85_42aa2386",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000108
+      },
+      "writtenOn": "2021-05-19T14:13:36Z",
+      "side": 1,
+      "message": "I think the asn1c generated files should be in a directory \"3rdparty\". There are not only generated files, but also files that asn1c copies directly (e.g.\"der_encoder.c\"). Not to confuse automated license scanners I would put them into the 3rdparty folder which excludes them from license checks. The ASN.1 file should be in another folder (as it is original material created by you). ",
+      "revId": "ff20129c8f517cca6e0b4de6544ff64aebe7c171",
+      "serverId": "84e4e190-e623-4c37-9eda-58b1937c1b53"
     }
   ]
 }
