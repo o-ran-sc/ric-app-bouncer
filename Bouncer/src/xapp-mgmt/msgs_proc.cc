@@ -144,6 +144,9 @@ void XappMsgHandler::operator()(rmr_mbuf_t *message, bool *resend){
 	}
       //a1_policy_helper helper;
 	bool res=false;
+	E2AP_PDU_t* e2pdu = (E2AP_PDU_t*)calloc(1, sizeof(E2AP_PDU));
+	int num = 0;
+	
 	switch(message->mtype){
 		//need to fix the health check.
 		case (RIC_HEALTH_CHECK_REQ):
@@ -178,13 +181,42 @@ void XappMsgHandler::operator()(rmr_mbuf_t *message, bool *resend){
 					free(me_id);
 				}
 				break;
+
 		case (RIC_INDICATION):
-			mdclog_write(MDCLOG_INFO, "Received indication message of type = %d", message->mtype);
-                        message->mtype = RIC_CONTROL_REQ;        // if we're here we are running and all is ok
-                        message->sub_id = -1;
-                        strncpy((char*)message->payload, "Bouncer Control OK\n", rmr_payload_size(message));
-                        *resend = true;
-                        break;
+			
+			if(message->mtype == 12050)
+                         {
+                           mdclog_write(MDCLOG_INFO, "Decoding indication for msg = %d", message->mtype);
+
+                           ASN_STRUCT_RESET(asn_DEF_E2AP_PDU, e2pdu);
+                           asn_transfer_syntax syntax;
+                           syntax = ATS_ALIGNED_BASIC_PER;
+
+                           mdclog_write(MDCLOG_INFO, "Data_size = %d",  message->len);
+
+                           auto rval =  asn_decode(nullptr, syntax, &asn_DEF_E2AP_PDU, (void**)&e2pdu, message->payload, message->len);
+
+                           if(rval.code == RC_OK)
+                           {
+                                 mdclog_write(MDCLOG_INFO, "rval.code = %d ", rval.code);
+                           }
+                           else{
+                                 mdclog_write(MDCLOG_ERR, " rval.code = %d ", rval.code);
+                                 break;
+                           }
+
+                           asn_fprint(stdout, &asn_DEF_E2AP_PDU, e2pdu);
+			   mdclog_write(MDCLOG_INFO, "Received indication message of type = %d", message->mtype);
+                           num++;
+			   message->mtype = RIC_CONTROL_REQ;        // if we're here we are running and all is ok
+                           message->sub_id = -1;
+                           strncpy((char*)message->payload, "Bouncer Control OK\n", rmr_payload_size(message));
+                           *resend = true;
+                           ASN_STRUCT_FREE(asn_DEF_E2AP_PDU, e2pdu);
+
+			 } 
+			 mdclog_write(MDCLOG_INFO, "Number of Indications Received = %d", num);
+			 break;
 
 	/*case A1_POLICY_REQ:
 

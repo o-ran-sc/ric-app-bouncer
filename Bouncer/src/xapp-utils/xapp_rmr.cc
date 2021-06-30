@@ -19,6 +19,8 @@
 
 
 #include "xapp_rmr.hpp"
+#include <stdlib.h>
+#define  RMR_MAX_XID 32
 
 XappRmr::XappRmr(std::string port, int rmrattempts){
 
@@ -74,7 +76,9 @@ bool XappRmr::rmr_header(xapp_rmr_header *hdr){
 	_xapp_send_buff->len = hdr->payload_length;
 	_xapp_send_buff->sub_id = -1;
 	rmr_str2meid(_xapp_send_buff, hdr->meid);
-
+	rmr_str2xact(_xapp_send_buff, hdr->meid);
+            
+	mdclog_write(MDCLOG_INFO,"hdr->meid = %s",hdr->meid);
 
 	return true;
 }
@@ -103,6 +107,17 @@ bool XappRmr::xapp_rmr_send(xapp_rmr_header *hdr, void *payload){
 		return false;
 	}
 
+	mdclog_write(MDCLOG_INFO,"------ start of Xid updated, file= %s, line=%d",__FILE__,__LINE__);
+	int test_support_xact_count = rand();
+        char *xid = (char *) malloc( sizeof( char ) * RMR_MAX_SRC );
+        memset(xid, '\0',RMR_MAX_SRC);
+	snprintf(xid, RMR_MAX_XID, "%010d", test_support_xact_count );
+ 
+	mdclog_write(MDCLOG_INFO,"before xapp_send_buff Xid=%s, file= %s, line=%d",xid,__FILE__,__LINE__);
+        memcpy(_xapp_send_buff->xaction, xid, RMR_MAX_XID);
+
+	mdclog_write(MDCLOG_INFO,"Xid=%s, file= %s, line=%d",_xapp_send_buff->xaction,__FILE__,__LINE__);
+
 	memcpy(_xapp_send_buff->payload, payload, hdr->payload_length);
 	_xapp_send_buff->len = hdr->payload_length;
 
@@ -120,6 +135,7 @@ bool XappRmr::xapp_rmr_send(xapp_rmr_header *hdr, void *payload){
 		}
 		else if (_xapp_send_buff->state == RMR_OK){
 			mdclog_write(MDCLOG_INFO,"Message Sent: RMR State = RMR_OK");
+        	mdclog_write(MDCLOG_INFO,"_xapp_send_buff->xaction: %s",_xapp_send_buff->xaction);
 			rmr_attempts = 0;
 			_xapp_send_buff = NULL;
 			return true;
