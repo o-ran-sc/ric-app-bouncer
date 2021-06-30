@@ -141,7 +141,9 @@ private:
 
 template <typename AppTransmitter>
 bool SubscriptionHandler::add_transmitter_entry(transaction_identifier id, AppTransmitter &&trans){
-	  mdclog_write(MDCLOG_INFO,"Entry added for Transaction ID: %s",id.c_str());
+
+	mdclog_write(MDCLOG_INFO,"Entry added for Transaction ID: %s", id.c_str());
+
 
   // add entry in hash table if it does not exist
   auto search = trans_table.find(id);
@@ -166,7 +168,9 @@ int SubscriptionHandler::manage_subscription_request(transaction_identifier rmr_
 
     res = add_request_entry(rmr_trans_id, request_pending);
     if(! res){
-      mdclog_write(MDCLOG_ERR, "%s, %d : Error adding new subscription request %s to queue because request with identical key already present",  __FILE__, __LINE__, rmr_trans_id);
+		
+      mdclog_write(MDCLOG_ERR, "%s : Error adding new subscription request %s to queue because request with identical key already present",  __FILE__, __LINE__);
+	  
       return SUBSCR_ERR_DUPLICATE;
     }
   }
@@ -181,10 +185,10 @@ int SubscriptionHandler::manage_subscription_request(transaction_identifier rmr_
   if (!flg){
     // clear state
     delete_request_entry(rmr_trans_id);
-    mdclog_write(MDCLOG_ERR, "%s, %d :: Error transmitting subscription request %s", __FILE__, __LINE__, rmr_trans_id.c_str() );
+    mdclog_write(MDCLOG_ERR, "%s, %d :: Error transmitting subscription request %s", __FILE__, __LINE__, rmr_trans_id.c_str());
     return SUBSCR_ERR_TX;
   } else {
-	  mdclog_write(MDCLOG_INFO, "%s, %d :: Transmitted subscription request for trans_id %s", __FILE__, __LINE__, rmr_trans_id.c_str() );
+	  mdclog_write(MDCLOG_INFO, "%s, %d :: Transmitted subscription request for trans_id  %s", __FILE__, __LINE__, rmr_trans_id.c_str());
 	  add_transmitter_entry(rmr_trans_id, tx);
 
   }

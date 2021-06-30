@@ -121,7 +121,7 @@ void SubscriptionHandler::manage_subscription_response(int message_type, transac
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
   {
 	  std::unique_lock<std::mutex> _local_lock(*(_data_lock.get()));
-	  mdclog_write(MDCLOG_INFO,"Subscription Handler: Status for me id %s WAS: %d",id.c_str(),this->get_request_status(id));
+	  mdclog_write(MDCLOG_INFO,"Subscription Handler: Status for meid %s WAS: %d",id.c_str(),this->get_request_status(id));
 
 	  //from the message type we can know if its a success/failure etc.
 	  if(message_type==RIC_SUB_RESP)
@@ -130,7 +130,8 @@ void SubscriptionHandler::manage_subscription_response(int message_type, transac
 	  if(message_type==RIC_SUB_FAILURE)
 	  this->set_request_status(id,request_failed);
 
-	  mdclog_write(MDCLOG_INFO,"Subscription Handler: Status for me id %s IS: %d",id.c_str(),this->get_request_status(id));
+	  mdclog_write(MDCLOG_INFO,"Subscription Handler: Status for meid %s IS: %d",id.c_str(),this->get_request_status(id));
+
 
 	  //this->print_subscription_status();
    }

@@ -126,11 +126,13 @@ void Xapp::startup_subscribe_requests(void ){
    if(sz <= 0)
 	   mdclog_write(MDCLOG_INFO,"Subscriptions cannot be sent as GNBList in RNIB is NULL");
 
-   for(int i = 0; i<sz; i++){
-
+   for(int i = 0; i<sz; i++)
+   {
+	 sleep(15); 
 	 //give the message to subscription handler, along with the transmitter.
 	 strcpy((char*)meid,gnblist[i].c_str());
 
+         mdclog_write(MDCLOG_INFO,"GNBList size : %d", sz);
 
 	 subscription_helper  din;
 	 subscription_helper  dout;
@@ -158,25 +160,28 @@ void Xapp::startup_subscribe_requests(void ){
 
 	 res = sub_req.encode_e2ap_subscription(&buf[0], &buf_size, din);
 
- 	 xapp_rmr_header rmr_header;
+ 	 //mdclog_write(MDCLOG_INFO,"GNBList = %s and ith val = %d", gnblist[i], i);
+
+	 mdclog_write(MDCLOG_INFO,"Sending subscription in file= %s, line=%d for MEID %s",__FILE__,__LINE__, meid);
+	 
+	 xapp_rmr_header rmr_header;
  	 rmr_header.message_type = RIC_SUB_REQ;
  	 rmr_header.payload_length = buf_size; //data_size
-  	 strcpy((char*)rmr_header.meid,gnblist[i].c_str());
 
- 	 mdclog_write(MDCLOG_INFO,"Sending subscription in file= %s, line=%d for MEID %s",__FILE__,__LINE__, meid);
+	 strcpy((char*)rmr_header.meid,gnblist[i].c_str());
+
+	 auto transmitter = std::bind(&XappRmr::xapp_rmr_send,rmr_ref, &rmr_header, (void*)buf); //(void*)data);
          
-	 auto transmitter = std::bind(&XappRmr::xapp_rmr_send,rmr_ref, &rmr_header, (void*)buf );//(void*)data);
-
          int result = subhandler_ref->manage_subscription_request(gnblist[i], transmitter);
          
-       	  if(result==SUBSCR_SUCCESS){
+       	 if(result==SUBSCR_SUCCESS){
+
      	      mdclog_write(MDCLOG_INFO,"Subscription SUCCESSFUL in file= %s, line=%d for MEID %s",__FILE__,__LINE__, meid);
           }
-           else {
-	      mdclog_write(MDCLOG_ERR,"Subscription FAILED in file= %s, line=%d for MEID %s",__FILE__,__LINE__, meid);
+          else {
+		 mdclog_write(MDCLOG_ERR,"Subscription FAILED in file= %s, line=%d for MEID %s",__FILE__,__LINE__, meid);
               }  
-   }
-
+	} 
 }
 
 void Xapp::startup_get_policies(void){
@@ -246,9 +251,4 @@ void Xapp::set_rnib_gnblist(void) {
 	    return;
 
 }
-
-
-
-
-
 
