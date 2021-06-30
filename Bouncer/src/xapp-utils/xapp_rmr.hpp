@@ -50,11 +50,25 @@
 #include <chrono>
 #include <sys/time.h>
 
+#include "a1_helper.hpp"
+#include "e2ap_control.hpp"
+#include "e2ap_control_response.hpp"
+#include "e2ap_indication.hpp"
+#include "subscription_delete_request.hpp"
+#include "subscription_delete_response.hpp"
+#include "subscription_helper.hpp"
+#include "subscription_request.hpp"
+#include "subscription_request.hpp"
+#include "subscription_response.hpp"
+#include "e2sm_subscription.hpp"
+#include "subs_mgmt.hpp"
+
 typedef struct{
 	struct timespec ts;
 	int32_t message_type;
 	int32_t state;
 	int32_t payload_length;
+	
 	unsigned char sid[RMR_MAX_SID]; //Subscription ID.
 	unsigned char src[RMR_MAX_SRC]; //Xapp Name
 	unsigned char meid[RMR_MAX_MEID]={};
@@ -126,6 +140,7 @@ void XappRmr::xapp_rmr_receive(MsgHandler&& msgproc, XappRmr *parent){
         std::time_t recvMsg_time;
         struct timeval ts_recv;
         struct timeval ts_sent;
+        int num = 0;
 
 	while(parent->get_listen()) {
 		mdclog_write(MDCLOG_INFO, "Listening at Thread: %s",  thread_id.str().c_str());
@@ -135,7 +150,7 @@ void XappRmr::xapp_rmr_receive(MsgHandler&& msgproc, XappRmr *parent){
 		
                 if (io_file) {
                         gettimeofday(&ts_recv, NULL);
-                        io_file << "Received Msg with msgType: " << this->_xapp_received_buff->mtype << " at time: " <<  (ts_recv.tv_sec * 1000000) + (ts_recv.tv_usec) << std::endl;
+                        io_file << "Received Msg with msgType: " << this->_xapp_received_buff->mtype << " at time: " <<  (ts_recv.tv_sec * 1000) + (ts_recv.tv_usec/1000) << std::endl;
                 }
 
 		if( this->_xapp_received_buff->mtype < 0 || this->_xapp_received_buff->state != RMR_OK ) {
@@ -150,23 +165,29 @@ void XappRmr::xapp_rmr_receive(MsgHandler&& msgproc, XappRmr *parent){
 		    //in case message handler returns true, need to resend the message.
 			msgproc(this->_xapp_received_buff, resend);
 
+			//start of code to check decoding indication payload
+
+                         num++;
+                         mdclog_write(MDCLOG_DEBUG, "Total Indications received : %d", num);
+
 			if(*resend){
 				mdclog_write(MDCLOG_INFO,"RMR Return to Sender Message of Type: %d",this->_xapp_received_buff->mtype);
 				mdclog_write(MDCLOG_INFO,"RMR Return to Sender Message: %s",(char*)this->_xapp_received_buff->payload);
 				
 				if (io_file) {
                                         gettimeofday(&ts_sent, NULL);
-                                        io_file << "Send Msg with msgType: " << this->_xapp_received_buff->mtype << " at time: " <<  (ts_sent.tv_sec * 1000000) + (ts_sent.tv_usec) << std::endl;
+										
+                                        io_file << "Send Msg with msgType: " << this->_xapp_received_buff->mtype << " at time: " << (ts_sent.tv_sec * 1000) + (ts_sent.tv_usec/1000) << std::endl;
 
-                                        io_file << "Time diff: " << ((ts_sent.tv_sec - ts_recv.tv_sec)*1000000 + (ts_sent.tv_usec - ts_recv.tv_usec)) << std::endl;
+                                        io_file << "Time diff: " << ((ts_sent.tv_sec - ts_recv.tv_sec)*1000 + (ts_sent.tv_usec - ts_recv.tv_usec)/1000) << std::endl;
                                 }
 
 				rmr_rts_msg(rmr_context, this->_xapp_received_buff );
-				sleep(1);
+				//sleep(1);
+
 				*resend = false;
 			}
 			continue;
-
 		}
 
 	}
@@ -188,8 +209,5 @@ void XappRmr::xapp_rmr_receive(MsgHandler&& msgproc, XappRmr *parent){
 
 	return;
 }
-
-
-
 
 #endif /* XAPP_RMR_XAPP_RMR_H_ */
