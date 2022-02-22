@@ -4,11 +4,11 @@ project_creation_date: '2021-01-13'
 project_category: ''
 lifecycle_state: 'Incubation'
 project_lead: &oran_ric_app_bouncer_ptl
-    name: 'Matti Hiltunen'
-    email: 'hiltunen@att.com'
-    id: 'MattiHiltunen'
-    company: 'ATT'
-    timezone: ''
+    name: 'Sunil Singh'
+    email: 'Singh.Sunil@hcl.com'
+    id: 'Sunil Singh'
+    company: 'HCL'
+    timezone: 'Unknown/Unknown'
 primary_contact: *oran_ric_app_bouncer_ptl
 issue_tracking:
     type: 'jira'
@@ -38,10 +38,12 @@ committers:
       email: 'himesh.s@hcl.com'
       company: 'HCL'
       id: 'himeshshukla'
-    - name: 'Vaishali Sachdeva'
-      email: 'vaishali.sachdeva@hcl.com'
+      timezone: 'Unknown/Unknown'
+    - name: 'Amit Srivastava'
+      email: 'amitsriv@hcl.com'
       company: 'HCL'
-      id: 'VaishaliSachdeva'
+      id: 'amit.sarnath'
+      timezone: 'Unknown/Unknown'
 tsc:
     # yamllint disable rule:line-length
     approval: 'https://wiki.o-ran-sc.org/display/TOC#ORANSCTechnicalOversightCommittee(TOC)-20210106'
