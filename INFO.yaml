@@ -44,6 +44,11 @@ committers:
       company: 'HCL'
       id: 'amit.sarnath'
       timezone: 'Unknown/Unknown'
+    - name: 'Sandeep Kumar'
+      email: 'kumar.sandeep3@hcl.com'
+      company: 'HCL'
+      id: 'sandeepindia'
+      timezone: 'Unknown/Unknown'
 tsc:
     # yamllint disable rule:line-length
     approval: 'https://wiki.o-ran-sc.org/display/TOC#ORANSCTechnicalOversightCommittee(TOC)-20210106'
