@@ -1,0 +1,8 @@
+Verified+1: ORAN Jobbuilder <releng+oran-jobbuilder@linuxfoundation.org>
+Code-Review+1: Amit Srivastava <amitsriv@hcl.com>
+Code-Review+2: Himesh Shukla <himesh.s@hcl.com>
+Submitted-by: Himesh Shukla <himesh.s@hcl.com>
+Submitted-at: Wed, 04 May 2022 08:55:19 +0000
+Reviewed-on: https://gerrit.o-ran-sc.org/r/c/ric-app/bouncer/+/8137
+Project: ric-app/bouncer
+Branch: refs/heads/master
