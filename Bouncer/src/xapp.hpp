@@ -34,7 +34,7 @@
 #include "rapidjson/writer.h"
 #include "rapidjson/document.h"
 #include "rapidjson/error/error.h"
-
+#include<thread>
 #include "msgs_proc.hpp"
 #include "subs_mgmt.hpp"
 #include "xapp_config.hpp"

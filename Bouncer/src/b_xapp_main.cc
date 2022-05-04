@@ -17,6 +17,95 @@
 */
 
 #include "xapp.hpp"
+#include <cpprest/http_listener.h>
+#include <cpprest/json.h>
+#include <cpprest/uri.h>
+using namespace web;
+using namespace web::http;
+using namespace web::http::experimental::listener;
+using namespace utility;
+std::vector<std::string>SubscriptionIds;
+#define TRACE(msg)            wcout << msg
+
+
+void display_json(
+   json::value const & jvalue)
+{
+        cout<<"\ndisplaying REST Notification\n";
+   wcout << jvalue.serialize().c_str() << endl;
+}
+
+
+void handle_request(http_request request)
+{
+auto answer = json::value::object();
+cout<<"\nPrinting POST request content\n";
+cout<<request.to_string()<<"\n";
+   request
+      .extract_json()
+      .then([&answer](pplx::task<json::value> task) {
+         try
+         {
+            answer = task.get();
+            display_json(answer);
+            }
+         catch (http_exception const & e)
+         {
+         cout<<"\ninside catch block";
+            wcout << e.what() << endl;
+         }
+
+      })
+      .wait();
+
+   request.reply(status_codes::OK, answer);
+}
+
+void handle_post(http_request request)
+{
+   TRACE("\nhandle POST\n");
+
+   handle_request(request);
+}
+
+void handle_put(http_request request)
+{
+   TRACE("\nhandle PUT\n");
+
+   handle_request(request);
+}
+
+void start_server()
+{
+        
+         utility::string_t port = U("8080");
+         utility::string_t address = U("http://0.0.0.0:");
+         address.append(port);
+   	 address.append(U("/ric/v1/subscriptions/response"));
+     	uri_builder uri(address);
+
+         auto addr = uri.to_uri().to_string();
+         http_listener listener(addr);
+   	//http_listener listener("http://localhost:8080/ric");
+   	cout<<"validated uri = "<<uri::validate(addr)<<"\n";
+         ucout << utility::string_t(U("Listening for REST Notification at: ")) << addr << std::endl;
+   	listener.support(methods::POST,[](http_request request) { handle_post(request);});
+   	listener.support(methods::PUT,[](http_request request){  handle_put(request);});
+   	try
+   	{
+      	listener
+         	.open()
+         	.then([&listener]() { })
+         	.wait();
+
+      	while (true);
+   	}
+   	catch (exception const & e)
+   	{
+      	wcout << e.what() << endl;
+   	}
+
+}
 
 void signalHandler( int signum ) {
    cout << "Interrupt signal (" << signum << ") received.\n";
@@ -65,6 +154,8 @@ int main(int argc, char *argv[]){
 
 	mdclog_write(MDCLOG_INFO, "Created Bouncer Xapp Instance");
 	//Startup E2 subscription
+	std::thread t1(std::ref(start_server));
+	t1.detach();
 	b_xapp->startup(sub_handler);
 
 	sleep(10);
@@ -78,10 +169,10 @@ int main(int argc, char *argv[]){
 
 	b_xapp->start_xapp_receiver(std::ref(*mp_handler));
 
-	sleep(1);
+	sleep(20);//waiting for some time before sending delete.
 
 
-
+	b_xapp->shutdown();//will start the sending delete procedure.
  	while(1){
 	 			sleep(1);
 	 		 }

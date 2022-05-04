@@ -75,6 +75,10 @@ RUN apt-get install -y  libboost-all-dev
 RUN apt-get install -y libhiredis-dev
 #RUN apt-get install -y valgrind
 
+RUN mkdir /usr/local/include/nlohmann
+RUN git clone https://github.com/azadkuh/nlohmann_json_release.git
+RUN cp nlohmann_json_release/json.hpp /usr/local/include/nlohmann
+
 RUN git clone https://gerrit.o-ran-sc.org/r/ric-plt/dbaas
 RUN cd dbaas/redismodule && \
     ./autogen.sh && \
@@ -103,6 +107,20 @@ RUN git clone https://github.com/Tencent/rapidjson && \
     cd ${STAGE_DIR} && \
     rm -rf rapidjson
 
+WORKDIR ${STAGE_DIR}
+## Install CPPRESTSDK
+
+RUN apt-get install -y libcpprest-dev
+RUN apt-get install -y  g++ git libboost-atomic-dev libboost-thread-dev libboost-system-dev libboost-date-time-dev libboost-regex-dev libboost-filesystem-dev libboost-random-dev libboost-chrono-dev libboost-serialization-dev libwebsocketpp-dev openssl libssl-dev ninja-build zlib1g-dev
+RUN git clone https://github.com/Microsoft/cpprestsdk.git casablanca && \
+    cd casablanca && \
+    mkdir build && \
+    cd build && \
+    cmake -G Ninja .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF -DBUILD_SAMPLES=OFF -DCMAKE_INSTALL_PREFIX=/usr/local .. && \
+    ninja && \
+    ninja install && \
+    cd ${STAGE_DIR}
+    #rm -rf casablanca
 ##-----------------------------------
 # Now install the program
 #------------------------------------
@@ -135,10 +153,12 @@ COPY --from=ricbuild /usr/local/libexec/redismodule/libredis* /usr/local/libexec
 RUN dpkg -i /tmp/*.deb
 RUN apt-get update && \
     apt-get install -y libcurl3 python3 && \
-    apt-get install -y libboost-all-dev cpputest libhiredis-dev valgrind && \
+    apt-get install -y libboost-all-dev cpputest libcpprest-dev libhiredis-dev valgrind && \
     apt-get clean
 COPY --from=ricbuild /etc/xapp/* /etc/xapp/
 COPY --from=ricbuild /usr/local/bin/b_xapp_main /usr/local/bin/b_xapp_main
+COPY --from=ricbuild /usr/local/lib/libcpprest.so* /usr/local/bin/
+COPY --from=ricbuild /usr/local/lib/libcpprest.so* /usr/local/lib/
 COPY --from=ricbuild /usr/local/include/rnib/*.h /usr/local/include/rnib/
 COPY --from=ricbuild /usr/local/include/rnib/rnibreader.a /usr/local/include/rnib/
 

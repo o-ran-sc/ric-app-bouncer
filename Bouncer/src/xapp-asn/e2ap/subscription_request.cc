@@ -175,6 +175,7 @@ bool subscription_request::set_fields( InitiatingMessage_t * init_msg, subscript
   ies_ricreq->value.present = RICsubscriptionRequest_IEs__value_PR_RICrequestID;
   RICrequestID_t *ricrequest_ie = &ies_ricreq->value.choice.RICrequestID;
   ricrequest_ie->ricRequestorID = helper.get_request_id();
+ mdclog_write(MDCLOG_INFO,"instance id for subsreq  = %d", ricrequest_ie->ricInstanceID);
   //ricrequest_ie->ricRequestSequenceNumber = helper.get_req_seq();
   result = ASN_SEQUENCE_ADD(&(ric_subscription->protocolIEs), &IE_array[ie_index]);
   assert(result == 0);

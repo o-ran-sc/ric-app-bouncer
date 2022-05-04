@@ -14,12 +14,18 @@
         "messaging": {
             "ports": [
                 {
+                        "name": "http",
+                        "container": "bouncer-xapp",
+                        "port": 8080,
+                        "description": "http service"
+                },
+                {
                     "name": "rmr-data",
                     "container": "bouncer-xapp",
                     "port": 4560,
-                   
-           	    "rxMessages": ["RIC_SUB_RESP", "RIC_INDICATION"],
-                    "txMessages": ["RIC_SUB_REQ"],
+
+                    "rxMessages": ["RIC_SUB_RESP", "RIC_INDICATION","RIC_SUB_DEL_RESP"],
+                    "txMessages": ["RIC_SUB_REQ","RIC_SUB_DEL_REQ"],
                     "policies": [1],
                     "description": "rmr receive data port for Bouncer xApp"
                 },
@@ -35,8 +41,12 @@
             "protPort": "tcp:4560",
             "maxSize": 2072,
             "numWorkers": 1,
-            "txMessages": ["RIC_SUB_REQ"],
-            "rxMessages": ["RIC_SUB_RESP", "RIC_INDICATION"],
-	    "policies": [1]
+            "txMessages": ["RIC_SUB_REQ","RIC_SUB_DEL_REQ"],
+            "rxMessages": ["RIC_SUB_RESP", "RIC_INDICATION","RIC_SUB_DEL_RESP"],
+            "policies": [1]
+        },
+        "http":{
+                "protPort": "tcp:8080"
+
         }
   }

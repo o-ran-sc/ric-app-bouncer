@@ -113,30 +113,35 @@ bool subscription_delete::encode_e2ap_subscription(unsigned char *buf, size_t *s
 }
 
 
-bool  subscription_delete::set_fields( subscription_helper &helper){
-  unsigned int ie_index;
-  
-  ie_index = 0;
-  RICsubscriptionDeleteRequest_IEs_t *ies_ricreq = &IE_array[ie_index];
-  ies_ricreq->criticality = Criticality_reject;
-  ies_ricreq->id = ProtocolIE_ID_id_RICrequestID;
-  ies_ricreq->value.present = RICsubscriptionDeleteRequest_IEs__value_PR_RICrequestID;
-  RICrequestID_t *ricrequest_ie = &ies_ricreq->value.choice.RICrequestID;
-  ricrequest_ie->ricRequestorID = helper.get_request_id();
-  //ricrequest_ie->ricRequestSequenceNumber = helper.get_req_seq();
+bool  subscription_delete::set_fields( subscription_helper &helper)
+{
+	static long update_instance=0;//static variable to update ricInstaceID for sending delete req
+ 	unsigned int ie_index;
+ 	ie_index = 0;
+ 	RICsubscriptionDeleteRequest_IEs_t *ies_ricreq = &IE_array[ie_index];
+ 	ies_ricreq->criticality = Criticality_reject;
+ 	ies_ricreq->id = ProtocolIE_ID_id_RICrequestID;
+ 	ies_ricreq->value.present = RICsubscriptionDeleteRequest_IEs__value_PR_RICrequestID;
+ 	RICrequestID_t *ricrequest_ie = &ies_ricreq->value.choice.RICrequestID;
+ 	ricrequest_ie->ricRequestorID = helper.get_request_id();
+ 	update_instance++;//incrementing ricInstanceID by one, each time the bouncer send delete req
+ 	ricrequest_ie->ricInstanceID = update_instance;
+ 	mdclog_write(MDCLOG_INFO,"instance id for subsdelreq  = %d", update_instance);
+ 	//ricrequest_ie->ricRequestSequenceNumber = helper.get_req_seq();
 
 
   
-  ie_index = 1;
-  RICsubscriptionDeleteRequest_IEs_t *ies_ranfunc = &IE_array[ie_index];
-  ies_ranfunc->criticality = Criticality_reject;
-  ies_ranfunc->id = ProtocolIE_ID_id_RANfunctionID;
-  ies_ranfunc->value.present = RICsubscriptionDeleteRequest_IEs__value_PR_RANfunctionID;
-  RANfunctionID_t *ranfunction_ie = &ies_ranfunc->value.choice.RANfunctionID;
-  *ranfunction_ie = helper.get_function_id();
-
+  	ie_index = 1;
+  	RICsubscriptionDeleteRequest_IEs_t *ies_ranfunc = &IE_array[ie_index];
+  	ies_ranfunc->criticality = Criticality_reject;
+  	ies_ranfunc->id = ProtocolIE_ID_id_RANfunctionID;
+  	ies_ranfunc->value.present = RICsubscriptionDeleteRequest_IEs__value_PR_RANfunctionID;
+  	RANfunctionID_t *ranfunction_ie = &ies_ranfunc->value.choice.RANfunctionID;
+  	*ranfunction_ie = helper.get_function_id();
+  	mdclog_write(MDCLOG_INFO,"ran function  id for subsdelreq  = %d", helper.get_function_id());
+  	//*ranfunction_ie =1;
   
-  return true;
+  	return true;
 };
 
 

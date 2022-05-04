@@ -49,7 +49,7 @@
 #define SUBSCR_ERR_FAIL -3
 #define SUBSCR_ERR_UNKNOWN -4
 #define SUBSCR_ERR_DUPLICATE -5
-
+#define SUBSCR_ERR_NOT_FOUND -6
 using namespace std;
 
 class TransmitterBase
@@ -165,7 +165,6 @@ int SubscriptionHandler::manage_subscription_request(transaction_identifier rmr_
   // put entry in request table
   {
     std::lock_guard<std::mutex> lock(*(_data_lock.get()));
-
     res = add_request_entry(rmr_trans_id, request_pending);
     if(! res){
 		
@@ -178,10 +177,8 @@ int SubscriptionHandler::manage_subscription_request(transaction_identifier rmr_
 
   // acquire lock ...
   std::unique_lock<std::mutex> _local_lock(*(_data_lock.get()));
-
   // Send the message
   bool flg = tx();
-
   if (!flg){
     // clear state
     delete_request_entry(rmr_trans_id);
@@ -205,4 +202,52 @@ int SubscriptionHandler::manage_subscription_request(transaction_identifier rmr_
    return res;
 };
 
+template<typename AppTransmitter>
+int SubscriptionHandler:: manage_subscription_delete_request(transaction_identifier rmr_trans_id, AppTransmitter && tx)
+{
+	int res;
+  	// delete  entry in request table
+  	{
+    		std::lock_guard<std::mutex> lock(*(_data_lock.get()));
+    		res = delete_request_entry(rmr_trans_id);
+     		mdclog_write(MDCLOG_INFO,"res=%d",res);
+    		if(! res)
+		{
+      			mdclog_write(MDCLOG_ERR, "%s : Error deleting new subscription request %s from queue because request with key doesn't present",  __FILE__, __LINE__);
+
+      			return SUBSCR_ERR_NOT_FOUND;
+    		}
+
+  	}
+
+
+  	// acquire lock ...
+  	std::unique_lock<std::mutex> _local_lock(*(_data_lock.get()));
+  	// Send the message
+  	bool flg = tx();
+
+  	if (!flg)
+	{
+    		// add state
+    		res = add_request_entry(rmr_trans_id, request_pending);
+    		mdclog_write(MDCLOG_ERR, "%s, %d :: Error transmitting subscription delete request %s", __FILE__, __LINE__, rmr_trans_id.c_str());
+    		return SUBSCR_ERR_TX;
+  	} 
+	else 
+	{
+          	mdclog_write(MDCLOG_INFO, "%s, %d :: Transmitted subscription delete request for trans_id  %s", __FILE__, __LINE__, rmr_trans_id.c_str());
+
+  	}
+
+ 	// record time stamp ..
+  	auto start = std::chrono::system_clock::now();
+  	std::chrono::milliseconds t_out(_time_out);
+
+  	//the wait functionality has been removed.
+
+
+ 	_local_lock.unlock();
+  	// std::cout <<"Returning  res = " << res << " for request = " << rmr_trans_id  << std::endl;
+   	return res;
+};
 #endif

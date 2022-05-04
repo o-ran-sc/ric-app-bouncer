@@ -116,26 +116,33 @@ bool SubscriptionHandler::is_request_entry(transaction_identifier id){
 
 
 // Handles subscription responses
-void SubscriptionHandler::manage_subscription_response(int message_type, transaction_identifier id){
+void SubscriptionHandler::manage_subscription_response(int message_type, transaction_identifier id)
+{
 	// Make This Thread sleep for 1 Second
-  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-  {
-	  std::unique_lock<std::mutex> _local_lock(*(_data_lock.get()));
-	  mdclog_write(MDCLOG_INFO,"Subscription Handler: Status for meid %s WAS: %d",id.c_str(),this->get_request_status(id));
+  	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+  	{
+	  	std::unique_lock<std::mutex> _local_lock(*(_data_lock.get()));
+	  	mdclog_write(MDCLOG_INFO,"Subscription Handler: Status for meid %s WAS: %d",id.c_str(),this->get_request_status(id));
 
-	  //from the message type we can know if its a success/failure etc.
-	  if(message_type==RIC_SUB_RESP)
-	  this->set_request_status(id, request_success);
+	  	//from the message type we can know if its a success/failure etc.
+	  	if(message_type==RIC_SUB_RESP)
+	  		this->set_request_status(id, request_success);
+	 
+	  	if(message_type==RIC_SUB_DEL_RESP)
+	  		this->set_request_status(id, request_success);
 
-	  if(message_type==RIC_SUB_FAILURE)
-	  this->set_request_status(id,request_failed);
+	  	if(message_type==RIC_SUB_FAILURE)
+	  		this->set_request_status(id,request_failed);
+	  
+	  	if(message_type==RIC_SUB_DEL_FAILURE)
+	  		this->set_request_status(id,request_failed);
+	  
+	  	mdclog_write(MDCLOG_INFO,"Subscription Handler: Status for meid %s IS: %d",id.c_str(),this->get_request_status(id));
 
-	  mdclog_write(MDCLOG_INFO,"Subscription Handler: Status for meid %s IS: %d",id.c_str(),this->get_request_status(id));
 
-
-	  //this->print_subscription_status();
-   }
-  //_cv.get()->notify_all();
+	  	//this->print_subscription_status();
+   	}
+  	//_cv.get()->notify_all();
 
 }
 

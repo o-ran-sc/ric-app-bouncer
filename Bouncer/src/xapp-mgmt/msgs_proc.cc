@@ -136,102 +136,150 @@ bool XappMsgHandler::decode_subscription_response(unsigned char* data_buf, size_
 
 
 //For processing received messages.XappMsgHandler should mention if resend is required or not.
-void XappMsgHandler::operator()(rmr_mbuf_t *message, bool *resend){
+void XappMsgHandler::operator()(rmr_mbuf_t *message, bool *resend)
+{
 
-	if (message->len > MAX_RMR_RECV_SIZE){
+	if (message->len > MAX_RMR_RECV_SIZE)
+	{
 		mdclog_write(MDCLOG_ERR, "Error : %s, %d, RMR message larger than %d. Ignoring ...", __FILE__, __LINE__, MAX_RMR_RECV_SIZE);
 		return;
 	}
-      //a1_policy_helper helper;
+      		//a1_policy_helper helper;
 	bool res=false;
 	E2AP_PDU_t* e2pdu = (E2AP_PDU_t*)calloc(1, sizeof(E2AP_PDU));
 	int num = 0;
 	
-	switch(message->mtype){
+	switch(message->mtype)
+	{
 		//need to fix the health check.
 		case (RIC_HEALTH_CHECK_REQ):
-				message->mtype = RIC_HEALTH_CHECK_RESP;        // if we're here we are running and all is ok
-				message->sub_id = -1;
-				strncpy( (char*)message->payload, "Bouncer OK\n", rmr_payload_size( message) );
-				*resend = true;
-				break;
+			message->mtype = RIC_HEALTH_CHECK_RESP;        // if we're here we are running and all is ok
+			message->sub_id = -1;
+			strncpy( (char*)message->payload, "Bouncer OK\n", rmr_payload_size( message) );
+			*resend = true;
+			break;
 
 		case (RIC_SUB_RESP):
         		mdclog_write(MDCLOG_INFO, "Received subscription message of type = %d", message->mtype);
-				unsigned char *me_id;
-				if( (me_id = (unsigned char *) malloc( sizeof( unsigned char ) * RMR_MAX_MEID )) == NULL ) {
-					mdclog_write(MDCLOG_ERR, "Error :  %s, %d : malloc failed for me_id", __FILE__, __LINE__);
-					me_id = rmr_get_meid(message, NULL);
-				} else {
-					rmr_get_meid(message, me_id);
-				}
-				if(me_id == NULL){
-					mdclog_write(MDCLOG_ERR, " Error :: %s, %d : rmr_get_meid failed me_id is NULL", __FILE__, __LINE__);
-					break;
-				}
-				mdclog_write(MDCLOG_INFO,"RMR Received MEID: %s",me_id);
-				if(_ref_sub_handler !=NULL){
-					_ref_sub_handler->manage_subscription_response(message->mtype, reinterpret_cast< char const* >(me_id));
-				} else {
-					mdclog_write(MDCLOG_ERR, " Error :: %s, %d : Subscription handler not assigned in message processor !", __FILE__, __LINE__);
-				}
-				*resend = false;
-				if (me_id != NULL) {
-					mdclog_write(MDCLOG_INFO, "Free RMR Received MEID memory: %s(0x%x)", me_id, me_id);
-					free(me_id);
-				}
+			unsigned char *me_id;
+			if( (me_id = (unsigned char *) malloc( sizeof( unsigned char ) * RMR_MAX_MEID )) == NULL ) 
+			{
+				mdclog_write(MDCLOG_ERR, "Error :  %s, %d : malloc failed for me_id", __FILE__, __LINE__);
+				me_id = rmr_get_meid(message, NULL);
+			} 
+			else 
+			{
+				rmr_get_meid(message, me_id);
+			}
+			if(me_id == NULL)
+			{
+				mdclog_write(MDCLOG_ERR, " Error :: %s, %d : rmr_get_meid failed me_id is NULL", __FILE__, __LINE__);
 				break;
+			}
+			mdclog_write(MDCLOG_INFO,"RMR Received MEID: %s",me_id);
+			if(_ref_sub_handler !=NULL)
+			{
+				_ref_sub_handler->manage_subscription_response(message->mtype, reinterpret_cast< char const* >(me_id));
+			} 
+			else 
+			{
+				mdclog_write(MDCLOG_ERR, " Error :: %s, %d : Subscription handler not assigned in message processor !", __FILE__, __LINE__);
+			}
+			*resend = false;
+			if (me_id != NULL) 
+			{
+				mdclog_write(MDCLOG_INFO, "Free RMR Received MEID memory: %s(0x%x)", me_id, me_id);
+				free(me_id);
+			}
+			break;
+
+		case (RIC_SUB_DEL_RESP):
+        		mdclog_write(MDCLOG_INFO, "Received subscription delete message of type = %d", message->mtype);
+			//unsigned char *me_id;
+			if( (me_id = (unsigned char *) malloc( sizeof( unsigned char ) * RMR_MAX_MEID )) == NULL ) 
+			{
+				mdclog_write(MDCLOG_ERR, "Error :  %s, %d : malloc failed for me_id", __FILE__, __LINE__);
+				me_id = rmr_get_meid(message, NULL);
+			} 
+			else 
+				
+			{
+				rmr_get_meid(message, me_id);
+			}
+			if(me_id == NULL)
+			{
+				mdclog_write(MDCLOG_ERR, " Error :: %s, %d : rmr_get_meid failed me_id is NULL", __FILE__, __LINE__);
+				break;
+			}
+			mdclog_write(MDCLOG_INFO,"RMR Received MEID: %s",me_id);
+			if(_ref_sub_handler !=NULL)
+			{
+				_ref_sub_handler->manage_subscription_response(message->mtype, reinterpret_cast< char const* >(me_id));
+			} 
+			else 
+			{
+				mdclog_write(MDCLOG_ERR, " Error :: %s, %d : Subscription handler not assigned in message processor !", __FILE__, __LINE__);
+			}
+			*resend = false;
+			if (me_id != NULL) 
+			{
+				mdclog_write(MDCLOG_INFO, "Free RMR Received MEID memory: %s(0x%x)", me_id, me_id);
+				free(me_id);
+			}
+			break;
 
 		case (RIC_INDICATION):
 			
 			if(message->mtype == 12050)
-                         {
-                           mdclog_write(MDCLOG_INFO, "Decoding indication for msg = %d", message->mtype);
+                        {
+                           	mdclog_write(MDCLOG_INFO, "Decoding indication for msg = %d", message->mtype);
 
-                           ASN_STRUCT_RESET(asn_DEF_E2AP_PDU, e2pdu);
-                           asn_transfer_syntax syntax;
-                           syntax = ATS_ALIGNED_BASIC_PER;
+                           	ASN_STRUCT_RESET(asn_DEF_E2AP_PDU, e2pdu);
+                           	asn_transfer_syntax syntax;
+                           	syntax = ATS_ALIGNED_BASIC_PER;
 
-                           mdclog_write(MDCLOG_INFO, "Data_size = %d",  message->len);
+                           	mdclog_write(MDCLOG_INFO, "Data_size = %d",  message->len);
 
-                           auto rval =  asn_decode(nullptr, syntax, &asn_DEF_E2AP_PDU, (void**)&e2pdu, message->payload, message->len);
+                           	auto rval =  asn_decode(nullptr, syntax, &asn_DEF_E2AP_PDU, (void**)&e2pdu, message->payload, message->len);
 
-                           if(rval.code == RC_OK)
-                           {
-                                 mdclog_write(MDCLOG_INFO, "rval.code = %d ", rval.code);
-                           }
-                           else{
-                                 mdclog_write(MDCLOG_ERR, " rval.code = %d ", rval.code);
-                                 break;
-                           }
+				if(rval.code == RC_OK)
+				{
+                                 	mdclog_write(MDCLOG_INFO, "rval.code = %d ", rval.code);
+				}
+                       		else
+				{
+                                 	mdclog_write(MDCLOG_ERR, " rval.code = %d ", rval.code);
+                                 	break;
+                        	}
 
-                           asn_fprint(stdout, &asn_DEF_E2AP_PDU, e2pdu);
-			   mdclog_write(MDCLOG_INFO, "Received indication message of type = %d", message->mtype);
-                           num++;
-			   message->mtype = RIC_CONTROL_REQ;        // if we're here we are running and all is ok
-                           message->sub_id = -1;
-                           strncpy((char*)message->payload, "Bouncer Control OK\n", rmr_payload_size(message));
-                           *resend = true;
-                           ASN_STRUCT_FREE(asn_DEF_E2AP_PDU, e2pdu);
+                       		asn_fprint(stdout, &asn_DEF_E2AP_PDU, e2pdu);
+				mdclog_write(MDCLOG_INFO, "Received indication message of type = %d", message->mtype);
+   				num++;
+				message->mtype = RIC_CONTROL_REQ;        // if we're here we are running and all is ok
+                       		message->sub_id = -1;
+                       		strncpy((char*)message->payload, "Bouncer Control OK\n", rmr_payload_size(message));
+                       		*resend = true;
+                       		ASN_STRUCT_FREE(asn_DEF_E2AP_PDU, e2pdu);
 
 			 } 
-			 mdclog_write(MDCLOG_INFO, "Number of Indications Received = %d", num);
-			 break;
+			mdclog_write(MDCLOG_INFO, "Number of Indications Received = %d", num);
+			 	break;
 
-	/*case A1_POLICY_REQ:
+		/*case A1_POLICY_REQ:
 
-		    mdclog_write(MDCLOG_INFO, "In Message Handler: Received A1_POLICY_REQ.");
+		    	mdclog_write(MDCLOG_INFO, "In Message Handler: Received A1_POLICY_REQ.");
 			helper.handler_id = xapp_id;
 
 			res = a1_policy_handler((char*)message->payload, &message->len, helper);
-			if(res){
+			if(res)
+			{
 				message->mtype = A1_POLICY_RESP;        // if we're here we are running and all is ok
 				message->sub_id = -1;
 				*resend = true;
 			}
 			break;*/
 
-	default:
+		default:
 		{
 			mdclog_write(MDCLOG_ERR, "Error :: Unknown message type %d received from RMR", message->mtype);
 			*resend = false;

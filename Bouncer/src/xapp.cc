@@ -17,8 +17,21 @@
 */
 
 #include "xapp.hpp"
+#include <nlohmann/json.hpp>
+#include <iostream>
+#include<string>
+#include <cpprest/http_client.h>
+#include <cpprest/filestream.h>
+#include <cpprest/uri.h>
+#include <cpprest/json.h>
+using namespace utility;
+using namespace web;
+using namespace web::http;
+using namespace web::http::client;
+using namespace concurrency::streams;
+using jsonn = nlohmann::json;
 #define BUFFER_SIZE 1024
-
+extern std::vector<std::string>SubscriptionIds;
  Xapp::Xapp(XappSettings &config, XappRmr &rmr){
 
 	  rmr_ref = &rmr;
@@ -105,35 +118,247 @@ void Xapp::start_xapp_receiver(XappMsgHandler& mp_handler){
 }
 
 void Xapp::shutdown(){
-	return;
+	
+        sleep(70);
+        //send subscriptions delete.
+        shutdown_subscribe_deletes();
+        return;
 }
 
+void Xapp::shutdown_subscribe_deletes(void )
+{
+
+	bool res;
+   	size_t data_size = ASN_BUFF_MAX_SIZE;
+   	unsigned char	data[data_size];
+   	//unsigned char meid[RMR_MAX_MEID];
+	char meid[RMR_MAX_MEID];
+   	std::string xapp_id = config_ref->operator [](XappSettings::SettingName::XAPP_ID);
+
+   	mdclog_write(MDCLOG_INFO,"Preparing to send subscription Delete in file= %s, line=%d",__FILE__,__LINE__);
+
+   	auto gnblist = get_rnib_gnblist();
+
+   	int sz = gnblist.size();
+	 mdclog_write(MDCLOG_INFO,"GNBList size : %d", sz);
+
+   	if(sz <= 0)
+		mdclog_write(MDCLOG_INFO,"Subscriptions Delete cannot be sent as GNBList in RNIB is NULL");
+
+   	for(int i = 0; i<sz; i++)
+   	{
+	 	sleep(15);
+	 	//give the message to subscription handler, along with the transmitter.
+	 	strcpy((char*)meid,gnblist[i].c_str());
+		mdclog_write(MDCLOG_INFO,"sending %d subscription delete request out of : %d",i+1, sz);
+	     	mdclog_write(MDCLOG_INFO,"sending subscription delete to ,meid = %s", meid);
+		
+		if (SubscriptionIds.size()>0)
+		{
+		auto delJson = pplx::create_task([i,meid]() {
+		utility::string_t port = U("8088");
+                utility::string_t address = U("http://service-ricplt-submgr-http.ricplt.svc.cluster.local:");
+                address.append(port);
+                address.append(U("/ric/v1/subscriptions/"));
+		address.append( utility::string_t(SubscriptionIds.back()));
+				SubscriptionIds.pop_back();
+                uri_builder uri(address);
+                auto addr = uri.to_uri().to_string();
+                http_client client(addr);
+                ucout << utility::string_t(U("making requests at: ")) << addr <<std::endl;
+                return client.request(methods::DEL);
+
+                 
+                        })
+
+                        // Get the response.
+                                .then([](http_response response) {
+                                // Check the status code.
+                                if (response.status_code() != 204) {
+                                        throw std::runtime_error("Returned " + std::to_string(response.status_code()));
+                                }
+
+                                // Convert the response body to JSON object.
+                                	std::wcout << "Deleted: " << std::boolalpha << (response.status_code() == 204) << std::endl;
+                                        });
+
+                                // serailize the user details.
+                      
+
+                                        try {
+                                                delJson.wait();
+                                        }
+                                        catch (const std::exception& e) {
+                                                printf("Error exception:%s\n", e.what());
+                                        }
+										
+		}
+		
+		else{
+		 mdclog_write(MDCLOG_ERR,"Subscription delete cannot send in file= %s, line=%d for MEID %s as no valid subIDS",__FILE__,__LINE__, meid);
+		}
+
+		/*
+
+
+	 	subscription_helper  din;
+	 	subscription_helper  dout;
+
+         	subscription_delete sub_del;
+         	subscription_delete sub_recv;
+
+ 
+		unsigned char buf[BUFFER_SIZE];
+	 	size_t buf_size = BUFFER_SIZE;
+	 	bool res;
+
+
+	 	//Random Data  for request
+	 	int request_id = 1;
+	 	int function_id = 1;
+
+	 	din.set_request(request_id);
+	 	din.set_function_id(function_id);
+
+         	res = sub_del.encode_e2ap_subscription(&buf[0], &buf_size, din);
+
+	 	mdclog_write(MDCLOG_INFO,"Sending subscription delete  in file= %s, line=%d for MEID %s",__FILE__,__LINE__, meid);
+
+	 	xapp_rmr_header rmr_header; 
+ 	 	rmr_header.message_type = RIC_SUB_DEL_REQ;
+ 	 	rmr_header.payload_length = buf_size; //data_size
+
+	 	strcpy((char*)rmr_header.meid,gnblist[i].c_str());
+	 	auto transmitter = std::bind(&XappRmr::xapp_rmr_send,rmr_ref, &rmr_header, (void*)buf); //(void*)data)
+		if (subhandler_ref)
+		{
+			mdclog_write(MDCLOG_INFO,"subhandler_ref is valid pointer");
+		}
+		else
+		{
+		 	mdclog_write(MDCLOG_INFO,"subhandler_ref is invalid pointer");
+		}
+         	int result = subhandler_ref->manage_subscription_delete_request(gnblist[i], transmitter);
+
+       	 	if(result==SUBSCR_SUCCESS)
+		{
+
+     	      		mdclog_write(MDCLOG_INFO,"Subscription Delete SUCCESSFUL in file= %s, line=%d for MEID %s",__FILE__,__LINE__, meid);
+          	}
+          	else 
+		{
+		 	mdclog_write(MDCLOG_ERR,"Subscription Delete FAILED in file= %s, line=%d for MEID %s",__FILE__,__LINE__, meid);
+              	}
+		*/
+	}
+}
 
 void Xapp::startup_subscribe_requests(void ){
-
    bool res;
    size_t data_size = ASN_BUFF_MAX_SIZE;
    unsigned char	data[data_size];
-   unsigned char meid[RMR_MAX_MEID];
+   char meid[RMR_MAX_MEID];
    std::string xapp_id = config_ref->operator [](XappSettings::SettingName::XAPP_ID);
-
+   //int a =std::stoi(xapp_id);
    mdclog_write(MDCLOG_INFO,"Preparing to send subscription in file= %s, line=%d",__FILE__,__LINE__);
 
    auto gnblist = get_rnib_gnblist();
 
    int sz = gnblist.size();
-
+	mdclog_write(MDCLOG_INFO,"GNBList size : %d", sz);
    if(sz <= 0)
 	   mdclog_write(MDCLOG_INFO,"Subscriptions cannot be sent as GNBList in RNIB is NULL");
 
    for(int i = 0; i<sz; i++)
    {
-	 sleep(15); 
+	 sleep(15);
+	 strcpy((char*)meid,gnblist[i].c_str());
+        mdclog_write(MDCLOG_INFO,"sending %d subscription request out of : %d",i+1, sz);
+
+	 //mdclog_write(MDCLOG_INFO,"GNBList,gnblist[i] = %s and ith val = %d", gnblist[i], i);
+	 mdclog_write(MDCLOG_INFO,"sending subscription to ,meid = %s", meid);
+
+auto postJson = pplx::create_task([meid,xapp_id]() {
+
+
+                jsonn jsonObject;
+                 jsonObject =
+    {
+
+
+
+        {"SubscriptionId",""},
+        {"ClientEndpoint",{{"Host","service-ricxapp-bouncer-xapp-http.ricxapp"},{"HTTPPort",8080},{"RMRPort",4560}}},
+        {"Meid",meid},
+        {"RANFunctionID",0},
+        {"SubscriptionDetails",
+                {
+                        {
+                            {"XappEventInstanceId",12345},{"EventTriggers",{0}},
+                            {"ActionToBeSetupList",
+                                    {
+                                        {
+                                                {"ActionID",1},{"ActionType","report"},{"ActionDefinition",{0}},{"SubsequentAction",{{"SubsequentActionType","continue"},{"TimeToWait","zero"}}}
+                                        }
+                                    }
+                            }
+                        }
+                }
+        }
+
+    };
+                        std::cout <<jsonObject.dump(4) << "\n";
+                        utility::stringstream_t s;
+                        s << jsonObject.dump().c_str();
+                        web::json::value ret = json::value::parse(s);
+                       // std::wcout << ret.serialize().c_str() << std::endl;
+                utility::string_t port = U("8088");
+                 utility::string_t address = U("http://service-ricplt-submgr-http.ricplt.svc.cluster.local:");
+                  address.append(port);
+                  address.append(U("/ric/v1/subscriptions"));
+                uri_builder uri(address);
+                auto addr = uri.to_uri().to_string();
+                http_client client(addr);
+                //std::cout<<uri::validate(addr)<<" validation \n";
+                ucout << utility::string_t(U("making requests at: ")) << addr << "\n";
+                return client.request(methods::POST,U("/"),ret.serialize(),U("application/json"));
+                        })
+
+                        // Get the response.
+                                .then([](http_response response) {
+                                // Check the status code.
+                                if (response.status_code() != 201) {
+                                        throw std::runtime_error("Returned " + std::to_string(response.status_code()));
+                                }
+
+                                // Convert the response body to JSON object.
+                                return response.extract_json();
+                                        })
+
+                                // serailize the user details.
+                                                .then([](json::value jsonObject) {
+						std::cout<<"\nRecieved REST subscription response\n";
+                                                std::wcout << jsonObject.serialize().c_str() << "\n";
+						std::string tmp;
+						tmp=jsonObject[U("SubscriptionId")].as_string();
+						SubscriptionIds.push_back(tmp);
+
+                                                        });
+
+                                        try {
+                                                postJson.wait();
+                                        }
+                                        catch (const std::exception& e) {
+                                                printf("Error exception:%s\n", e.what());
+                                        }
+
+	
+	/*
 	 //give the message to subscription handler, along with the transmitter.
 	 strcpy((char*)meid,gnblist[i].c_str());
 
          mdclog_write(MDCLOG_INFO,"GNBList size : %d", sz);
-
+	mdclog_write(MDCLOG_INFO,"sending %d subscription request out of : %d",i+1, sz);
 	 subscription_helper  din;
 	 subscription_helper  dout;
 
@@ -160,7 +385,7 @@ void Xapp::startup_subscribe_requests(void ){
 
 	 res = sub_req.encode_e2ap_subscription(&buf[0], &buf_size, din);
 
- 	 //mdclog_write(MDCLOG_INFO,"GNBList = %s and ith val = %d", gnblist[i], i);
+	 //mdclog_write(MDCLOG_INFO,"GNBList = %s and ith val = %d", gnblist[i], i);
 
 	 mdclog_write(MDCLOG_INFO,"Sending subscription in file= %s, line=%d for MEID %s",__FILE__,__LINE__, meid);
 	 
@@ -180,8 +405,10 @@ void Xapp::startup_subscribe_requests(void ){
           }
           else {
 		 mdclog_write(MDCLOG_ERR,"Subscription FAILED in file= %s, line=%d for MEID %s",__FILE__,__LINE__, meid);
-              }  
-	} 
+              }
+	    */  
+	}
+   std::cout<<"\n SubscriptionIds vector size= "<<SubscriptionIds.size()<<"\n"; 
 }
 
 void Xapp::startup_get_policies(void){
