@@ -16,6 +16,23 @@
       "message": "Implemented REST subscription request and REST subscription delete request. \nkindly review it.",
       "revId": "eb27c05c05b5042d115480c40cffa16e7d473d80",
       "serverId": "84e4e190-e623-4c37-9eda-58b1937c1b53"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b9a6428c_7d235b87",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000108
+      },
+      "writtenOn": "2022-05-05T13:46:06Z",
+      "side": 1,
+      "message": "Note that once this is merged we would still like to remove support for ASN.1 in the submgr subscription interface as per RIC-375",
+      "revId": "eb27c05c05b5042d115480c40cffa16e7d473d80",
+      "serverId": "84e4e190-e623-4c37-9eda-58b1937c1b53"
     }
   ]
 }
