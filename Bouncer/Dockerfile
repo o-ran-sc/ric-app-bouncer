@@ -1,179 +1,66 @@
-#/*
-#==================================================================================
-#
-#        Copyright (c) 2019-2020 AT&T Intellectual Property.
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-#==================================================================================
-# */
-
-ARG SCHEMA_PATH=schemas
-ARG STAGE_DIR=/tmp/bouncer-xapp
-
-#==================================================================================
-FROM nexus3.o-ran-sc.org:10001/ubuntu:18.04 as ricbuild
-
-# to override repo base, pass in repo argument when running docker build:
-# docker build --build-arg REPOBASE=http://abc.def.org . ....
-ARG REPOBASE=https://gerrit.oran-osc.org/r
-ARG SCHEMA_FILE
-ARG SCHEMA_PATH
-ARG STAGE_DIR
-
-# Install necessary packages
-WORKDIR ${STAGE_DIR}
-RUN apt-get update  \
-     && apt-get install -y \
-     cmake \
-     git \
-     build-essential \
-     automake \
-     autoconf-archive \
-     autoconf \
-     pkg-config \
-     gawk \
-     libtool \
-     wget \
-     zlib1g-dev \
-     libffi-dev \
-     && apt-get clean
-
-# Install mdclog using debian package hosted at packagecloud.io
-ARG MDC_VER=0.0.4-1
-RUN wget -nv --content-disposition https://packagecloud.io/o-ran-sc/release/packages/debian/stretch/mdclog_${MDC_VER}_amd64.deb/download.deb
-RUN wget -nv --content-disposition https://packagecloud.io/o-ran-sc/release/packages/debian/stretch/mdclog-dev_${MDC_VER}_amd64.deb/download.deb
-RUN dpkg -i mdclog_${MDC_VER}_amd64.deb
-RUN dpkg -i mdclog-dev_${MDC_VER}_amd64.deb
-
-# Install RMr using debian package hosted at packagecloud.io
-ARG RMR_VER=4.0.5
-RUN wget -nv --content-disposition https://packagecloud.io/o-ran-sc/release/packages/debian/stretch/rmr_${RMR_VER}_amd64.deb/download.deb
-RUN wget -nv --content-disposition https://packagecloud.io/o-ran-sc/release/packages/debian/stretch/rmr-dev_${RMR_VER}_amd64.deb/download.deb
-RUN dpkg -i rmr_${RMR_VER}_amd64.deb
-RUN dpkg -i rmr-dev_${RMR_VER}_amd64.deb
-
-#Install RNIB libraries
-ARG RNIB_VER=1.0.0
-RUN wget -nv --content-disposition https://packagecloud.io/o-ran-sc/release/packages/debian/stretch/rnib_${RNIB_VER}_all.deb/download.deb
-RUN dpkg -i rnib_${RNIB_VER}_all.deb
-
-## Install SDL Libraries
-WORKDIR ${STAGE_DIR}
-RUN apt-get install -y cpputest
-RUN apt-get remove -y libboost-all-dev
-RUN apt-get install -y  libboost-all-dev
-RUN apt-get install -y libhiredis-dev
-#RUN apt-get install -y valgrind
-
-RUN mkdir /usr/local/include/nlohmann
-RUN git clone https://github.com/azadkuh/nlohmann_json_release.git
-RUN cp nlohmann_json_release/json.hpp /usr/local/include/nlohmann
-
-RUN git clone https://gerrit.o-ran-sc.org/r/ric-plt/dbaas
-RUN cd dbaas/redismodule && \
-    ./autogen.sh && \
-    ./configure && \
-    make all && \
-    make install
-
-WORKDIR ${STAGE_DIR}
-RUN git clone https://gerrit.o-ran-sc.org/r/ric-plt/sdl
-RUN cd sdl && \
-    ./autogen.sh && \
-    ./configure && \
-    make all && \
-    make install
+FROM kumarsandeep3/hcl-bouncer-base-image-ubntu-20:1.0.0 as buildenv
+RUN mkdir -p /lite
+WORKDIR /lite
+#RUN apt-get update
+COPY e2ap/ e2ap/
+COPY e2sm_kpm/ e2sm_kpm/
+COPY e2sm_rc/ e2sm_rc/
+# "COMPILING E2AP Wrapper"
+RUN cd e2ap && \
+    gcc -c -fPIC -Iheaders/ lib/*.c wrapper.c && \
+    gcc *.o -shared -o libe2apwrapper.so && \
+    cp libe2apwrapper.so /usr/local/lib/ && \
+    mkdir /usr/local/include/e2ap && \
+    cp wrapper.h headers/*.h /usr/local/include/e2ap && \
+    ldconfig
+# "COMPILING E2SM-KPM Wrapper"
+RUN cd e2sm_kpm && \
+    gcc -c -fPIC -Iheaders/ lib/*.c wrapper.c && \
+    gcc *.o -shared -o libe2smkpmwrapper.so&& \
+    cp libe2smkpmwrapper.so /usr/local/lib/ && \
+    mkdir /usr/local/include/e2sm_kpm && \
+    cp wrapper.h headers/*.h /usr/local/include/e2sm_kpm && \
+    ldconfig
+# "COMPILING E2SM-RC Wrapper"
+RUN cd e2sm_rc && \
+    gcc -c -fPIC -Iheaders/ lib/*.c wrapper.c && \
+    gcc *.o -shared -o libe2smrcwrapper.so&& \
+    cp libe2smrcwrapper.so /usr/local/lib/ && \
+    mkdir /usr/local/include/e2sm_rc && \
+    cp wrapper.h headers/*.h /usr/local/include/e2sm_rc && \
+    ldconfig
 
 
-WORKDIR ${STAGE_DIR}
-## Install rapidjson
+# -----  copy files and source code ----------------------------------
 
-RUN git clone https://github.com/Tencent/rapidjson && \
-    cd rapidjson && \
-    mkdir build && \
-    cd build && \
-    cmake -DCMAKE_INSTALL_PREFIX=/usr/local .. && \
-    make install && \
-    cd ${STAGE_DIR} && \
-    rm -rf rapidjson
-
-WORKDIR ${STAGE_DIR}
-## Install CPPRESTSDK
-
-RUN apt-get install -y libcpprest-dev
-RUN apt-get install -y  g++ git libboost-atomic-dev libboost-thread-dev libboost-system-dev libboost-date-time-dev libboost-regex-dev libboost-filesystem-dev libboost-random-dev libboost-chrono-dev libboost-serialization-dev libwebsocketpp-dev openssl libssl-dev ninja-build zlib1g-dev
-RUN git clone https://github.com/Microsoft/cpprestsdk.git casablanca && \
-    cd casablanca && \
-    mkdir build && \
-    cd build && \
-    cmake -G Ninja .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF -DBUILD_SAMPLES=OFF -DCMAKE_INSTALL_PREFIX=/usr/local .. && \
-    ninja && \
-    ninja install && \
-    cd ${STAGE_DIR}
-    #rm -rf casablanca
-##-----------------------------------
-# Now install the program
-#------------------------------------
-COPY ./ ${STAGE_DIR}
-RUN ls -al
+COPY routes.txt .
+COPY xapp-descriptor/ xapp-descriptor/
+COPY src/ src/
 
 
-RUN export CPATH=$CPATH:/usr/local/include && \ 
-    cd src && \
-#    source ./xapp_env.sh \
-    make clean && \
-    make install 
+RUN g++ -std=c++17 /lite/src/*.cpp  -I /lite/src/ -I /lite/e2ap/headers -I /lite/e2sm_kpm/headers -I /lite/e2sm_rc/headers -o bouncer-xapp -lricxfcpp -lrmr_si -lpthread -lm -lboost_system -lcrypto -lssl -lcpprest -lpistache -lnlohmann_json_schema_validator -le2apwrapper -le2smrcwrapper -le2smrcwrapper
 
-COPY ${SCHEMA_PATH}/* /etc/xapp/ 
-COPY init/init_script.py /etc/xapp/init_script.py
-COPY init/routes.txt  /etc/xapp/routes.txt
-#---------------------------------------------
-# #Build the final version
+RUN cp bouncer-xapp /usr/local/bin/
 
-FROM ubuntu:18.04
+# -----  create final, smaller, image ----------------------------------
+FROM ubuntu:20.04
 
-ARG SCHEMA_PATH
-ARG STAGE_DIR
+RUN mkdir -p /lite
+WORKDIR /lite
 
-## copy just the needed libraries install it into the final image
-COPY --from=ricbuild ${STAGE_DIR}/*.deb /tmp/
-COPY --from=ricbuild /usr/local/lib/librmr_si* /usr/local/lib/
-COPY --from=ricbuild /usr/local/lib/libsdl* /usr/local/lib/
-COPY --from=ricbuild /usr/local/libexec/redismodule/libredis* /usr/local/libexec/redismodule/
-RUN dpkg -i /tmp/*.deb
-RUN apt-get update && \
-    apt-get install -y libcurl3 python3 && \
-    apt-get install -y libboost-all-dev cpputest libcpprest-dev libhiredis-dev valgrind && \
-    apt-get clean
-COPY --from=ricbuild /etc/xapp/* /etc/xapp/
-COPY --from=ricbuild /usr/local/bin/b_xapp_main /usr/local/bin/b_xapp_main
-COPY --from=ricbuild /usr/local/lib/libcpprest.so* /usr/local/bin/
-COPY --from=ricbuild /usr/local/lib/libcpprest.so* /usr/local/lib/
-COPY --from=ricbuild /usr/local/include/rnib/*.h /usr/local/include/rnib/
-COPY --from=ricbuild /usr/local/include/rnib/rnibreader.a /usr/local/include/rnib/
+COPY --from=buildenv /usr/local/lib /usr/local/lib/
+#for ssl
+COPY --from=buildenv /lib/x86_64-linux-gnu/libcrypto.so.1.1 /lib/x86_64-linux-gnu/libcrypto.so.1.1
+COPY --from=buildenv /lib/x86_64-linux-gnu/libssl.so.1.1 /lib/x86_64-linux-gnu/libssl.so.1.1
+
+COPY --from=buildenv /usr/local/include /usr/local/include
+COPY --from=buildenv /usr/local/bin/ /usr/local/bin/
+COPY --from=buildenv /lite/routes.txt /lite/routes.txt
+
+ENV RMR_SEED_RT=/lite/routes.txt
+ENV RMR_SRC_ID=service-ricxapp-bouncer-xapp-rmr.ricxapp:4560
+ENV PATH=/usr/local/bin:$PATH
+ENV LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/lib
 
 
-RUN ldconfig
-RUN sysctl -w net.ipv6.conf.lo.disable_ipv6=1
-
-##ENV  PYTHONHOME=/opt/python3 \
-##     PYTHONPATH=/opt/python3 \
-ENV  RMR_RTG_SVC="9999" \
-     RMR_SEED_RT="/etc/xapp/routes.txt" \
-     LD_LIBRARY_PATH="/usr/local/lib:/usr/local/libexec" \
-     VERBOSE=0 \
-     CONFIG_FILE=/opt/ric/config/config-file.json
-     
-      
-
-CMD python3 /etc/xapp/init_script.py $CONFIG_FILE
+CMD [ "/usr/local/bin/bouncer-xapp" ]

@@ -1,0 +1,9 @@
+{
+"appName": "bouncer-xapp",
+"appVersion": "2.0.0",
+"configPath": "",
+"appInstanceName": "bouncer-xapp",
+"httpEndpoint": "<none>:8080",
+"rmrEndpoint": "<none>:4560",
+"config": "{\"xapp_name\":\"bouncer-xapp\",\"version\":\"2.0.0\",\"containers\":[{\"name\":\"bouncer-xapp\",\"image\":{\"registry\":\"nexus3.o-ran-sc.org:10004\",\"name\":\"oran-ric/bouncer_test\",\"tag\":\"2.0.0\"}}],\"messaging\":{\"ports\":[{\"name\":\"http\",\"container\":\"bouncer-xapp\",\"port\":8080,\"description\":\"http service\"},{\"name\":\"rmr-data\",\"container\":\"bouncer-xapp\",\"port\":4560,\"rxMessages\":[\"RIC_SUB_RESP\",\"RIC_INDICATION\"],\"txMessages\":[\"RIC_SUB_REQ\"],\"policies\":[],\"description\":\"rmr receive data port for bouncer-xapp\"},{\"name\":\"rmr-route\",\"container\":\"bouncer-xapp\",\"port\":4561,\"description\":\"rmr route port for bouncer-xapp\"}]},\"rmr\":{\"protPort\":\"tcp:4560\",\"maxSize\":2072,\"numWorkers\":1,\"rxMessages\":[\"RIC_SUB_RESP\",\"RIC_INDICATION\"],\"txMessages\":[\"RIC_SUB_REQ\"],\"policies\":[]}}"
+}
